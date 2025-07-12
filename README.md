@@ -1,6 +1,7 @@
 # Análisis de Desempeño en Detección de Pérdidas Eléctricas (CNR)
 
-> **Versión:** v6 · **Autor:** Gustavo Astudillo P.  
+> **Versión:** v6 · **Autor:** Gustavo Astudillo P.
+> **UDLA** (ACI1018EL) Programacíon en R.
 > Quarto + R (tidyverse / data.table) · Cobertura 94 %
 
 <div align="center">
