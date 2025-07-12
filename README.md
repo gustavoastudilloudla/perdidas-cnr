@@ -1,4 +1,4 @@
-# Análisis de Desempeño en Detección de Pérdidas Eléctricas (CNR)
+## Análisis de Desempeño en Detección de Pérdidas Eléctricas (CNR)
 
 > **Versión:** v6 · **Autor:** Gustavo Astudillo P.
 > **UDLA** (ACI1018EL) Programacíon en R.
