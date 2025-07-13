@@ -7,7 +7,7 @@ format:
     toc: false
     number-sections: false
     colorlinks: true
-    fontsize: 11pt
+    fontsize: 10pt
     include-in-header:
       text: |
         \usepackage{ragged2e}
@@ -20,12 +20,12 @@ format:
           keepspaces=true,
           showstringspaces=false
         }
-    fig-width: 7
-    fig-height: 5
+    fig-width: 8
+    fig-height: 6
     fig-pos: H
     geometry:
-      - top=2cm
-      - bottom=2cm
+      - top=2.5cm
+      - bottom=2.5cm
       - left=2cm
       - right=2cm
 
@@ -44,7 +44,7 @@ knitr:
 params:
   visitas_target:
     label: "Meta diaria de visitas efectivas"
-    value: 5
+    value: 8
     input: numeric
   cnr_target:
     label: "Meta diaria de CNR detectados"
@@ -119,7 +119,7 @@ if (exists("params")) {
   meta_visitas <- if (!is.null(params$visitas_target) && params$visitas_target != "") {
     as.numeric(params$visitas_target)
   } else {
-    5  # Valor por defecto
+    8  # Valor por defecto
   }
   
   meta_cnr <- if (!is.null(params$cnr_target) && params$cnr_target != "") {
@@ -145,8 +145,8 @@ if (exists("params")) {
   message("\n=== CONFIGURACIÓN DE PARÁMETROS DE ANÁLISIS ===\n")
   
   # Meta de visitas efectivas
-  input <- readline("Meta diaria visitas efectivas (Enter = 5): ")
-  meta_visitas <- ifelse(nchar(trimws(input)) == 0, 5, as.numeric(input))
+  input <- readline("Meta diaria visitas efectivas (Enter = 8): ")
+  meta_visitas <- ifelse(nchar(trimws(input)) == 0, 8, as.numeric(input))
   
   # Meta de CNR
   input <- readline("Meta diaria CNR detectados (Enter = 1): ")
@@ -170,7 +170,7 @@ if (exists("params")) {
   
 } else {
   # Modo no interactivo (ej: Rscript) - usar defaults
-  meta_visitas <- 5
+  meta_visitas <- 8
   meta_cnr <- 1
   fecha_ini <- NULL  # Sin filtro por defecto
   fecha_fin <- NULL  # Sin filtro por defecto
@@ -180,8 +180,8 @@ if (exists("params")) {
 
 # Validar que los valores numéricos sean positivos
 if (!is.numeric(meta_visitas) || meta_visitas <= 0) {
-  warning("Meta de visitas inválida. Usando valor por defecto: 5")
-  meta_visitas <- 5
+  warning("Meta de visitas inválida. Usando valor por defecto: 8")
+  meta_visitas <- 8
 }
 
 if (!is.numeric(meta_cnr) || meta_cnr <= 0) {
@@ -219,36 +219,49 @@ message(paste0(
 
 # Introducción
 
-Este documento presenta un análisis integral del desempeño de técnicos en la detección de pérdidas eléctricas (CNR - Consumo No Registrado). El análisis utiliza una función personalizada desarrollada en R que permite evaluar múltiples dimensiones del desempeño técnico, identificar patrones temporales y detectar anomalías en el proceso de inspección.
+Este documento presenta un análisis integral del desempeño de técnicos en la detección de pérdidas eléctricas (CNR - Consumo No Registrado). El sistema evalúa la efectividad operacional mediante métricas clave, identifica patrones temporales y detecta anomalías en el proceso de inspección.
+
+El análisis utiliza una función desarrollada en R que soporta múltiples tipos de entrada (data frames, vectores y matrices) y se optimiza automáticamente para grandes volúmenes de datos mediante `data.table`.
+
+## Arquitectura del análisis
+
+El siguiente diagrama ilustra el flujo de procesamiento de datos desde la carga inicial hasta la generación de reportes. La función principal determina el tipo de entrada y selecciona la ruta de procesamiento óptima según el volumen de datos.
+
+```{mermaid}
+flowchart TD
+A[Carga de datos ➜ perdidas.xlsx] --> B{Tipo de entrada}
+B -->|data.frame| C[Procesamiento dplyr/data.table]
+B -->|vector| D[Estadísticas vector]
+B -->|matriz| E[Estadísticas matriz]
+C --> F[Métricas & Anomalías]
+D --> F
+E --> F
+F --> G[Reportes & Visualización]
+```
 
 ## Configuración Interactiva
 
-Este análisis permite configurar parámetros de manera interactiva:
-- **Meta de visitas efectivas por día**: Define el objetivo diario de visitas que resulten en inspección efectiva
-- **Meta de CNR detectados por día**: Define el objetivo diario de detección de consumo no registrado
-- **Período de análisis**: Permite filtrar por rango de fechas específico
+Este análisis permite configurar parámetros de manera interactiva: - **Meta de visitas efectivas por día**: Define el objetivo diario de visitas que resulten en inspección efectiva - **Meta de CNR detectados por día**: Define el objetivo diario de detección de consumo no registrado - **Período de análisis**: Permite filtrar por rango de fechas específico
 
 ### Cómo configurar los parámetros:
-1. **En RStudio**: Al hacer knit aparecerá un cuadro de diálogo para ingresar los valores
-2. **Por código**: `rmarkdown::render('archivo.Rmd', params = list(visitas_target = 10, cnr_target = 3))`
-3. **En consola**: Al ejecutar los chunks interactivamente, se pedirán los valores
 
-Los valores configurados para este análisis son:
-- Meta visitas efectivas/día: **`r meta_visitas`**
-- Meta CNR/día: **`r meta_cnr`**
-- Período: **`r periodo_texto`**
+1.  **En RStudio**: Al hacer knit aparecerá un cuadro de diálogo para ingresar los valores
+2.  **Por código**: `rmarkdown::render('archivo.Rmd', params = list(visitas_target = 8, cnr_target = 3))`
+3.  **En consola**: Al ejecutar los chunks interactivamente, se pedirán los valores
+
+Los valores configurados para este análisis son: - Meta visitas efectivas/día: **`r meta_visitas`** - Meta CNR/día: **`r meta_cnr`** - Período: **`r periodo_texto`**
 
 ## Objetivo
 
 Desarrollar una función de complejidad media-alta que permita:
 
-- Analizar la efectividad de los técnicos en la detección de CNR
-- Identificar patrones temporales en las inspecciones
-- Generar métricas de desempeño comparativas
-- Detectar anomalías en el proceso
-- Evaluar el cumplimiento de metas diarias de visitas efectivas y detección de CNR
-- Soportar análisis de vectores y matrices para escalabilidad
-- Optimizar el procesamiento para grandes volúmenes de datos
+-   Analizar la efectividad de los técnicos en la detección de CNR
+-   Identificar patrones temporales en las inspecciones
+-   Generar métricas de desempeño comparativas
+-   Detectar anomalías en el proceso
+-   Evaluar el cumplimiento de metas diarias de visitas efectivas y detección de CNR
+-   Soportar análisis de vectores y matrices para escalabilidad
+-   Optimizar el procesamiento para grandes volúmenes de datos
 
 # Carga y Preparación de Datos
 
@@ -299,11 +312,11 @@ datos_perdidas %>%
 
 La función `analizar_desempeno_perdidas()` ha sido desarrollada con las siguientes características principales:
 
-- **Versatilidad**: Acepta data frames, vectores numéricos y matrices
-- **Optimización automática**: Usa data.table para datasets grandes (>50,000 filas)
-- **Detección de anomalías**: Múltiples métodos disponibles (Tukey, Z-score)
-- **Parámetros configurables**: Metas de desempeño ajustables interactivamente
-- **Documentación completa**: Incluye ejemplos reproducibles y descripción detallada de outputs
+-   **Versatilidad**: Acepta data frames, vectores numéricos y matrices
+-   **Optimización automática**: Usa data.table para datasets grandes (\>50,000 filas)
+-   **Detección de anomalías**: Múltiples métodos disponibles (Tukey, Z-score)
+-   **Parámetros configurables**: Metas de desempeño ajustables interactivamente
+-   **Documentación completa**: Incluye ejemplos reproducibles y descripción detallada de outputs
 
 ## Definición de la Función Principal
 
@@ -477,7 +490,7 @@ analizar_desempeno_perdidas <- function(data,
                                       fecha_inicio = NULL,
                                       fecha_fin = NULL,
                                       min_casos = 10,
-                                      visitas_efectivas_dia = 5,
+                                      visitas_efectivas_dia = 8,
                                       cnr_esperados_dia = 1,
                                       metodo_anomalias = c("tukey", "zscore", "none"),
                                       umbral_zscore = 3,
@@ -1887,26 +1900,23 @@ metodo_usado <- resultado$estadisticas_globales$metodo_procesamiento %||% "dplyr
 ```
 
 ### Métricas Generales
-1. **Tasa Global de CNR**: `r tasa_global`%
-2. **Total de Inspecciones**: `r format(total_insp, big.mark = ",")`
-3. **Técnicos Analizados**: `r tecnicos_analizados`
-4. **Mejor Desempeño**: `r str_trunc(mejor_tecnico, 30)` con índice de eficiencia de `r mejor_eficiencia`%
-5. **Método de procesamiento**: `r metodo_usado`
+
+1.  **Tasa Global de CNR**: `r tasa_global`%
+2.  **Total de Inspecciones**: `r format(total_insp, big.mark = ",")`
+3.  **Técnicos Analizados**: `r tecnicos_analizados`
+4.  **Mejor Desempeño**: `r str_trunc(mejor_tecnico, 30)` con índice de eficiencia de `r mejor_eficiencia`%
+5.  **Método de procesamiento**: `r metodo_usado`
 
 ### Cumplimiento de Metas
-1. **Cumplimiento promedio de visitas efectivas**: `r cumpl_visitas_prom`%
-2. **Cumplimiento promedio de CNR**: `r cumpl_cnr_prom`%
-3. **Técnicos que superan meta de visitas**: `r tecnicos_supera_visitas` de `r tecnicos_analizados` (`r round(tecnicos_supera_visitas/tecnicos_analizados*100, 1)`%)
-4. **Técnicos que superan meta de CNR**: `r tecnicos_supera_cnr` de `r tecnicos_analizados` (`r round(tecnicos_supera_cnr/tecnicos_analizados*100, 1)`%)
+
+1.  **Cumplimiento promedio de visitas efectivas**: `r cumpl_visitas_prom`%
+2.  **Cumplimiento promedio de CNR**: `r cumpl_cnr_prom`%
+3.  **Técnicos que superan meta de visitas**: `r tecnicos_supera_visitas` de `r tecnicos_analizados` (`r round(tecnicos_supera_visitas/tecnicos_analizados*100, 1)`%)
+4.  **Técnicos que superan meta de CNR**: `r tecnicos_supera_cnr` de `r tecnicos_analizados` (`r round(tecnicos_supera_cnr/tecnicos_analizados*100, 1)`%)
 
 ### Tendencias
-- Se observa una `r tendencia` en la detección de CNR durante el período analizado
 
-### Mejoras Implementadas
-1. **Soporte multi-tipo**: La función ahora acepta vectores y matrices además de data frames
-2. **Optimización automática**: Para datasets grandes (>50,000 filas) se usa data.table automáticamente
-3. **Detección de anomalías flexible**: Se puede elegir entre métodos Tukey, Z-score o ninguno
-4. **Documentación completa**: Ejemplos reproducibles y descripción detallada de todos los outputs
+-   Se observa una `r tendencia` en la detección de CNR durante el período analizado
 
 ## Recomendaciones
 
@@ -1929,17 +1939,19 @@ prom_dias_sin_cnr <- round(mean(resultado$metricas_individuales$dias_sin_cnr,
 ```
 
 ### Acciones Inmediatas
-1. **Programa de mentoría**: Emparejar los `r tecnicos_alto_desempeno` técnicos de alto desempeño con los `r tecnicos_bajo_desempeno` técnicos que requieren apoyo
-2. **Revisión de rutas**: Los técnicos tienen en promedio `r prom_dias_sin_cnr` días sin detectar CNR, lo que sugiere revisar la asignación de zonas
-3. **Capacitación focalizada**: Enfocarse en los tipos de CNR más frecuentes identificados en el análisis
-4. **Ajuste de metas**: Las metas actuales (`r meta_visitas` visitas/día, `r meta_cnr` CNR/día) pueden requerir revisión basada en el desempeño observado
+
+1.  **Programa de mentoría**: Emparejar los `r tecnicos_alto_desempeno` técnicos de alto desempeño con los `r tecnicos_bajo_desempeno` técnicos que requieren apoyo
+2.  **Revisión de rutas**: Los técnicos tienen en promedio `r prom_dias_sin_cnr` días sin detectar CNR, lo que sugiere revisar la asignación de zonas
+3.  **Capacitación focalizada**: Enfocarse en los tipos de CNR más frecuentes identificados en el análisis
+4.  **Ajuste de metas**: Las metas actuales (`r meta_visitas` visitas/día, `r meta_cnr` CNR/día) pueden requerir revisión basada en el desempeño observado
 
 ### Estrategias a Mediano Plazo
-1. **Sistema de incentivos**: Reconocer a técnicos que consistentemente superan las metas
-2. **Análisis geográfico**: Profundizar en las comunas con mayor incidencia de CNR
-3. **Optimización de recursos**: Redistribuir técnicos según la demanda por zona
-4. **Monitoreo continuo**: Implementar dashboards en tiempo real para seguimiento diario
-5. **Escalabilidad**: Aprovechar la optimización con data.table para análisis masivos
+
+1.  **Sistema de incentivos**: Reconocer a técnicos que consistentemente superan las metas
+2.  **Análisis geográfico**: Profundizar en las comunas con mayor incidencia de CNR
+3.  **Optimización de recursos**: Redistribuir técnicos según la demanda por zona
+4.  **Monitoreo continuo**: Implementar dashboards en tiempo real para seguimiento diario
+5.  **Escalabilidad**: Aprovechar la optimización con data.table para análisis masivos
 
 # Pruebas Unitarias y Validación
 
@@ -1947,27 +1959,27 @@ prom_dias_sin_cnr <- round(mean(resultado$metricas_individuales$dias_sin_cnr,
 
 Este documento incluye un sistema completo de pruebas unitarias para validar el correcto funcionamiento de la función `analizar_desempeno_perdidas()`. Las pruebas están organizadas en la carpeta `tests/testthat/` y cubren:
 
-1. **Validación de clases**: Verifica que los objetos devueltos tengan las clases correctas
-2. **Estructura de datos**: Valida la estructura interna del objeto resultado
-3. **Coherencia de longitudes**: Asegura consistencia en las dimensiones de los datos
-4. **Pruebas aleatorias (fuzz testing)**: Evalúa robustez con entradas aleatorias
+1.  **Validación de clases**: Verifica que los objetos devueltos tengan las clases correctas
+2.  **Estructura de datos**: Valida la estructura interna del objeto resultado
+3.  **Coherencia de longitudes**: Asegura consistencia en las dimensiones de los datos
+4.  **Pruebas aleatorias (fuzz testing)**: Evalúa robustez con entradas aleatorias
 
 ### Ejecutar Pruebas Unitarias
 
 ```{r run-tests}
 #| label: run-tests
-#| eval: false
+#| eval: true
 #| echo: true
 #| code-fold: true
 #| code-summary: "Ver código para ejecutar pruebas"
 
 # Ejecutar todas las pruebas unitarias
 if (dir.exists("tests/testthat")) {
-  cat("🧪 Ejecutando pruebas unitarias...\n\n")
+  cat("Ejecutando pruebas unitarias...\n\n")
   resultados_tests <- testthat::test_dir("tests/testthat")
   print(resultados_tests)
 } else {
-  cat("⚠️  No se encontró el directorio de pruebas. Asegúrate de tener la estructura:\n")
+  cat("No se encontró el directorio de pruebas. Asegúrate de tener la estructura:\n")
   cat("   tests/\n")
   cat("   └── testthat/\n")
   cat("       ├── test-clase.R\n")
@@ -2008,7 +2020,7 @@ cat('
 # En un proyecto real, las funciones estarían en archivos .R separados
 
 # Calcular cobertura
-cat("📊 Calculando cobertura de código...\n\n")
+cat("Calculando cobertura de código...\n\n")
 
 # Para este ejemplo, simulamos los resultados de cobertura
 # En un proyecto real, usarías: cov <- file_coverage(temp_file, "tests/testthat")
@@ -2047,7 +2059,7 @@ Comparación de rendimiento entre el procesamiento con `dplyr` vs `data.table` p
 library(microbenchmark)
 library(ggplot2)
 
-cat("⏱️  Iniciando análisis de rendimiento...\n\n")
+cat("Iniciando análisis de rendimiento...\n\n")
 
 # Crear datasets de diferentes tamaños para pruebas
 set.seed(42)
@@ -2137,7 +2149,7 @@ cat("\n✅ Conclusión: data.table muestra mejoras significativas de rendimiento
 cat("   especialmente en datasets grandes (>50,000 filas).\n")
 ```
 
----
+------------------------------------------------------------------------
 
 ```{r session-info}
 #| label: session-info
